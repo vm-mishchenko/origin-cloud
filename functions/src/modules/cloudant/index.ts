@@ -1,7 +1,7 @@
 import {ApiKey, ServerScope} from '@cloudant/cloudant';
-import {WriteStream} from 'fs';
+import {Backup} from './backup';
+import {CloudantManagerApi} from './manager-api';
 
-const couchbackup = require('@cloudant/couchbackup');
 const Cloudant = require('@cloudant/cloudant');
 
 export interface ICouchDbConfig {
@@ -11,7 +11,10 @@ export interface ICouchDbConfig {
 }
 
 export class CloudantManager {
-    public cloudant!: ServerScope;
+    backup: Backup;
+
+    private cloudant!: ServerScope;
+    private api: CloudantManagerApi;
 
     constructor(private username: string, private password: string, private domain: string) {
     }
@@ -19,6 +22,7 @@ export class CloudantManager {
     connect(): Promise<any> {
         return this.getCloudantInstance().then((cloudant) => {
             this.cloudant = cloudant;
+            this.initialize();
         });
     }
 
@@ -58,39 +62,20 @@ export class CloudantManager {
             });
     }
 
-    backupDatabases(writeStreamProvider: (databaseName: string) => WriteStream): Promise<any> {
-        return this.cloudant.db.list()
-            .then((databaseNames) => {
-                const promises = databaseNames.map((databaseName) => {
-                    const databaseUrl = `${this.getCloudantUrl()}/${databaseName}`;
-                    const writeStream = writeStreamProvider(databaseName);
+    private initialize() {
+        this.api = new CloudantManagerApi(
+            this.username,
+            this.password,
+            this.domain,
+            this.cloudant
+        );
 
-                    return this.backupDatabase(databaseUrl, writeStream);
-                });
-
-                return Promise.all(promises).then(() => databaseNames);
-            });
-    }
-
-    private backupDatabase(databaseUrl: string, writeStream: WriteStream): Promise<any> {
-        return new Promise((resolve, reject) => {
-            couchbackup.backup(
-                databaseUrl,
-                writeStream,
-                (err: any) => {
-                    if (err) {
-                        reject();
-                    }
-
-                    resolve();
-                }
-            );
-        });
+        this.backup = new Backup(this.cloudant, this.api);
     }
 
     private getCloudantInstance(): Promise<ServerScope> {
         return new Promise((resolve, reject) => {
-            Cloudant({url: this.getCloudantUrl()}, (err: any, cloudant: ServerScope) => {
+            Cloudant({url: this.api.getCloudantUrl()}, (err: any, cloudant: ServerScope) => {
                 if (err) {
                     reject(err);
                     return;
@@ -99,9 +84,5 @@ export class CloudantManager {
                 resolve(cloudant);
             });
         });
-    }
-
-    private getCloudantUrl(): string {
-        return `https://${this.username}:${this.password}@${this.domain}`;
     }
 }

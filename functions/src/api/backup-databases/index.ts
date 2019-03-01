@@ -15,7 +15,7 @@ export function backupDatabases() {
             const bucket = firebaseAdmin.admin.storage().bucket(appConfig.firebase.storages.backupDatabase.name);
 
             return cloudantManager.connect().then(() => {
-                return cloudantManager.backupDatabases((databaseName) => {
+                return cloudantManager.backup.backupAllDatabases((databaseName) => {
                     return bucket.file(createDatabaseBackupName(backupFolderPath, databaseName)).createWriteStream();
                 });
             });
