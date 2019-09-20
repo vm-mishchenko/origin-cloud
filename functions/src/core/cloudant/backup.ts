@@ -1,5 +1,5 @@
 import {ServerScope} from '@cloudant/cloudant';
-import {WriteStream} from 'fs';
+import {Writable} from 'stream';
 import {CloudantManagerApi} from './manager-api';
 
 const couchbackup = require('@cloudant/couchbackup');
@@ -8,7 +8,7 @@ export class Backup {
     constructor(private cloudant: ServerScope, private api: CloudantManagerApi) {
     }
 
-    backupAllDatabases(writeStreamProvider: (databaseName: string) => WriteStream): Promise<any> {
+  backupAllDatabases(writeStreamProvider: (databaseName: string) => Writable): Promise<any> {
         return this.cloudant.db.list()
             .then((databaseNames) => {
                 const promises = databaseNames.map((databaseName) => {
@@ -19,14 +19,14 @@ export class Backup {
             });
     }
 
-    backupDatabase(databaseName: string, writeStreamProvider: (databaseName: string) => WriteStream): Promise<any> {
+  backupDatabase(databaseName: string, writeStreamProvider: (databaseName: string) => Writable): Promise<any> {
         const databaseUrl = `${this.api.getCloudantUrl()}/${databaseName}`;
         const writeStream = writeStreamProvider(databaseName);
 
         return this.backupDatabase_(databaseUrl, writeStream);
     }
 
-    private backupDatabase_(databaseUrl: string, writeStream: WriteStream): Promise<any> {
+  private backupDatabase_(databaseUrl: string, writeStream: Writable): Promise<any> {
         return new Promise((resolve, reject) => {
             couchbackup.backup(
                 databaseUrl,

@@ -1,4 +1,5 @@
 import {ApiKey, ServerScope} from '@cloudant/cloudant';
+import {DocumentScope} from 'nano';
 import {Backup} from './backup';
 import {CloudantManagerApi} from './manager-api';
 
@@ -8,6 +9,94 @@ export interface ICouchDbConfig {
     key: string;
     password: string;
     name: string;
+}
+
+export class CloudantDoc {
+    constructor(readonly _id: string, readonly docScope: DocumentScope<any>) {
+    }
+
+    update(newData) {
+        return this.docScope.bulk({
+            docs: [
+                newData
+            ]
+        });
+    }
+
+    toJSON() {
+        return this.docScope.get(this._id);
+    }
+}
+
+/**
+ * Performs bulk doc update operations.
+ * */
+export class CloudantTransaction {
+    private filterFn: (doc) => boolean = () => true;
+
+    constructor(readonly docScope: DocumentScope<any>) {
+    }
+
+    /** Take function that filter the docs that ultimately should be updated. */
+    filter(filterFn: (doc) => boolean) {
+        this.filterFn = filterFn;
+
+        return this;
+    }
+
+    /** Applies map function to the doc and save it. */
+    update(mapFn: (doc: any) => any) {
+        return this.docScope.list({
+            include_docs: true
+        }).then((docListResponse) => {
+            const updatedDocs = docListResponse.rows
+              .filter((doc) => {
+                  return this.filterFn(doc.doc);
+              })
+              .map((doc) => {
+                  return mapFn(doc.doc);
+              });
+
+            // UNCOMMENT BEFORE UPDATE !!!
+            return this.docScope.bulk({
+                docs: updatedDocs
+            });
+        });
+    }
+}
+
+export class CloudantDatabase {
+    constructor(readonly name: string, private cloudant: ServerScope) {
+    }
+
+    docs() {
+        return this.cloudant.db.use(this.name).list().then((docListResponse) => {
+            return docListResponse.rows.map((doc) => {
+                console.log(doc);
+            });
+        });
+    }
+
+    doc(_id: string) {
+        return new CloudantDoc(_id, this.cloudant.db.use(this.name));
+    }
+
+    docCount() {
+        return this.cloudant.db.get(this.name).then((dbInfo) => {
+            return dbInfo.doc_count;
+        });
+    }
+
+    delDocCount() {
+        return this.cloudant.db.get(this.name).then((dbInfo) => {
+            return dbInfo.doc_del_count;
+        });
+    }
+
+    /** Performs bulk operations on the docs */
+    transaction() {
+        return new CloudantTransaction(this.cloudant.db.use(this.name));
+    }
 }
 
 export class CloudantManager {
@@ -60,6 +149,10 @@ export class CloudantManager {
                     };
                 });
             });
+    }
+
+    database(name: string) {
+        return new CloudantDatabase(name, this.cloudant);
     }
 
     private getCloudantUrl() {

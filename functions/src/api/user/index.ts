@@ -1,14 +1,13 @@
 import {UserRecord} from 'firebase-functions/lib/providers/auth';
-import {getAppCouchDbConfig} from '../../core/config';
-import * as firebaseAdmin from '../../core/firebase-admin';
-import {CloudantManager, ICouchDbConfig} from '../../modules/cloudant';
+import {CloudantManager, ICouchDbConfig} from '../../core/cloudant';
+import {FirebaseApp} from '../../core/firebase-app';
 
 interface IUserCouchDbConfig extends ICouchDbConfig {
     domain: string;
 }
 
-export function setUpNewUser(user: UserRecord) {
-    return getAppCouchDbConfig().then((appCouchDbConfig) => {
+export function setUpNewUser(firebaseApp: FirebaseApp, user: UserRecord) {
+    return firebaseApp.database().couchDbConfig().then((appCouchDbConfig) => {
         const cloudantManager = new CloudantManager(
             appCouchDbConfig.username,
             appCouchDbConfig.password,
@@ -22,7 +21,7 @@ export function setUpNewUser(user: UserRecord) {
                     ...couchDbConfig
                 };
 
-                const userRef = firebaseAdmin.admin.database().ref(`users/${user.uid}`);
+                const userRef = firebaseApp.app.database().ref(`users/${user.uid}`);
 
                 return userRef.update({couchDbConfig: userCouchDbConfig});
             });

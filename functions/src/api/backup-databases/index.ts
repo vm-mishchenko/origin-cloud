@@ -1,9 +1,8 @@
-import {CloudantManager} from '../../modules/cloudant';
-import {getAppConfig} from '../../core/config';
-import * as firebaseAdmin from '../../core/firebase-admin';
+import {CloudantManager} from '../../core/cloudant';
+import {FirebaseApp} from '../../core/firebase-app';
 
-export function backupDatabases() {
-  return getAppConfig()
+export function backupDatabases(firebaseApp: FirebaseApp) {
+  return firebaseApp.database().appConfig()
     .then((appConfig) => {
       const cloudantManager = new CloudantManager(
         appConfig.ibm.couchDb.username,
@@ -12,7 +11,7 @@ export function backupDatabases() {
       );
 
       const backupFolderPath = `${Date.now()}`;
-      const bucket = firebaseAdmin.admin.storage().bucket(appConfig.firebase.storages.backupDatabase.name);
+      const bucket = firebaseApp.app.storage().bucket(appConfig.firebase.storages.backupDatabase.name);
 
       return cloudantManager.connect().then(() => {
         return cloudantManager.backup.backupAllDatabases((databaseName) => {
