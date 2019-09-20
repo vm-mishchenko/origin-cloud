@@ -62,6 +62,10 @@ export class CloudantManager {
             });
     }
 
+    private getCloudantUrl() {
+        return `https://${this.username}:${this.password}@${this.domain}`;
+    }
+
     private initialize() {
         this.api = new CloudantManagerApi(
             this.username,
@@ -75,7 +79,7 @@ export class CloudantManager {
 
     private getCloudantInstance(): Promise<ServerScope> {
         return new Promise((resolve, reject) => {
-            Cloudant({url: this.api.getCloudantUrl()}, (err: any, cloudant: ServerScope) => {
+            Cloudant({url: this.getCloudantUrl()}, (err: any, cloudant: ServerScope) => {
                 if (err) {
                     reject(err);
                     return;

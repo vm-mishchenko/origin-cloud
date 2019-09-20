@@ -1,10 +1,10 @@
 export const admin = require('firebase-admin');
-const serviceAccount = require('../../../keys/seed-3611e-firebase-adminsdk-hz0z2-bf5f7cde0a.json');
+const serviceAccount = require('../../../keys/dev-origin-of-your-ideas-aaba30fd5a10.json');
 
 export function initialize() {
     return admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        databaseURL: 'https://seed-3611e.firebaseio.com'
+        databaseURL: 'https://dev-origin-of-your-ideas.firebaseio.com'
     });
 }
 
