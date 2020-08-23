@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "dev-origin-of-your-ideas"
+    "default": "dev-origin-of-your-ideas",
+    "prod": "origin-of-your-ideas"
   }
 }

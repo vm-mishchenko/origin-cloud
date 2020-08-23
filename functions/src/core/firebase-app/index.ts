@@ -2,8 +2,8 @@
 import * as admin from 'firebase-admin';
 import {FirebaseDatabase} from '../firebase-database';
 
-const devServiceAccount = require('../../../keys/dev-origin-of-your-ideas-aaba30fd5a10.json');
-const prodServiceAccount = require('../../../keys/origin-of-your-ideas-552a1448db69.json');
+const devServiceAccount = require('../../../keys/dev-origin-of-your-ideas-47e5d0770e14.json');
+const prodServiceAccount = require('../../../keys/origin-of-your-ideas-16e65b463c46.json');
 
 export const DEV_SERVICE_ACCOUNT_OPTIONS = {
   credential: admin.credential.cert(devServiceAccount),

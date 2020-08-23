@@ -1,7 +1,8 @@
 import {CloudantManager} from '../../core/cloudant';
 import {FirebaseApp} from '../../core/firebase-app';
+import {removeOldBackupFiles} from '../../scripts/remove-backups';
 
-export function backupDatabases(firebaseApp: FirebaseApp) {
+export function backupDatabases(firebaseApp: FirebaseApp, numberBackupsDateToLeave: number) {
   return firebaseApp.database().appConfig()
     .then((appConfig) => {
       const cloudantManager = new CloudantManager(
@@ -16,6 +17,9 @@ export function backupDatabases(firebaseApp: FirebaseApp) {
       return cloudantManager.connect().then(() => {
         return cloudantManager.backup.backupAllDatabases((databaseName) => {
           return bucket.file(createDatabaseBackupName(backupFolderPath, databaseName)).createWriteStream();
+        }).then(() => {
+          // remove exceeding number of backups
+          return removeOldBackupFiles(firebaseApp, numberBackupsDateToLeave);
         });
       });
     });
